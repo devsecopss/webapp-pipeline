@@ -15,6 +15,7 @@ pipeline {
     
    stage ('GitCheckSecrets') {
       steps {
+        sh 'touch trufflehog_results'
         sh 'docker run --rm --name th dxa4481/trufflehog --regex --entropy=False --json https://github.com/devsecopss/webapp-pipeline.git > trufflehog_results'
         sh 'cat trufflehog_results' 
        }
