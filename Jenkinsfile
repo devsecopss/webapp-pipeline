@@ -23,6 +23,11 @@ pipeline {
         sh 'docker run --rm dxa4481/trufflehog --regex --entropy=False --json https://github.com/devsecopss/webapp-pipeline.git > trufflehog_res.json || true'
         sh 'cat trufflehog_res.json' 
        }
+     //double Scan using git leaks
+     steps {
+       sh 'docker run --rm /zricethezavgitleaks -r=https://github.com/devsecopss/webapp-pipeline  --pretty --verbose > res.json' //by default ouput json
+       sh 'cat res.json'
+     }  
     }
     // Third Parties Vulnerabilities Analysis
     stage ('Dependencies Analysis') {
