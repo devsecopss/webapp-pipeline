@@ -1,8 +1,11 @@
+// Starting the pipeline
 pipeline {
   agent any
+  // using maven from jenkins (name has to be the same as the one in the configuration)
   tools {
     maven 'maven'
   }
+
   stages {
     stage ('Initialize') {
       steps {
@@ -10,9 +13,10 @@ pipeline {
                     echo "PATH = ${PATH}"
                     echo "M2_HOME = ${M2_HOME}"
             ''' 
+        echo "Starting Your Pipeline Build"
       }
     }
-    
+   // Check for any unintentionally left credentials 
    stage ('GitCheckSecrets') {
       steps {
         sh 'touch trufflehog_results'
@@ -20,18 +24,28 @@ pipeline {
         sh 'cat trufflehog_res.json' 
        }
     }
-    
+    // Third Parties Vulnerabilities Analysis
     stage ('Dependencies Analysis') {
       steps {
           sh '''
                 dependency-check || true
-                snyk test
-                snyk monitor
              '''
           sh 'cat /var/lib/jenkins/workspace/webapp-pipeline/odc-reports/dependency-check-report.xml'
        }
+    // Double Check You never know  
+      steps {
+        sh 'snyk test --json ---show-vulnerable-paths=all > snyk_res.json'
+        sh 'snyk wizard'
+        sh 'snyk monitor'
+       }
     }
     
+    stage ('Build') {
+      steps {
+      sh 'mvn clean package'
+       }
+    }
+    // Static Code Analysis 
     stage ('SAST') {
         steps {
           withSonarQubeEnv('sonar') {
@@ -40,13 +54,30 @@ pipeline {
           }
         }
       }
-
-    stage ('Build') {
-      steps {
-      sh 'mvn clean package'
-       }
+     stage("Quality Gate"){
+          timeout(time: 1, unit: 'HOURS') {
+              def qg = waitForQualityGate()
+              if (qg.status != 'OK') {
+                  error "Pipeline aborted due to quality gate failure: ${qg.status}"
+              }
+          }
+      }
+    // Artifact Repository uploader to Nexus Server
+    stage("Artifact Upload"){
+      echo "Add steps"  
     }
     
+    
+    
+    
+
+      stage ('Checking Services Health'){
+        steps {
+            sh 'echo Add my Script Over Here!!'
+          }
+      }
+
+
     stage ('Deploy-To-Tomcat') {
             steps {
                sshagent(['610d3050-5b62-4edc-8395-acddb916ec5c']) {
@@ -61,6 +92,9 @@ pipeline {
       }
     }
     
+    
+    stage("Upload reports To Defect Dojo"){
+    }
     
   }
 }
