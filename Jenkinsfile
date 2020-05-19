@@ -22,10 +22,8 @@ pipeline {
         sh 'touch trufflehog_results'
         sh 'docker run --rm dxa4481/trufflehog --regex --entropy=False --json https://github.com/devsecopss/webapp-pipeline.git > trufflehog_res.json || true'
         sh 'cat trufflehog_res.json' 
-       }
      
      //double Scan using git leaks
-     steps {
        sh 'docker run --rm /zricethezavgitleaks -r=https://github.com/devsecopss/webapp-pipeline  --pretty --verbose > res.json' //by default ouput json
        sh 'cat res.json'
      }  
@@ -37,9 +35,8 @@ pipeline {
                 dependency-check || true
              '''
           sh 'cat /var/lib/jenkins/workspace/webapp-pipeline/odc-reports/dependency-check-report.xml'
-       }
-    // Double Check You never know  
-      steps {
+
+        // Double Check You never know  
         sh 'snyk test --json ---show-vulnerable-paths=all > snyk_res.json'
         sh 'snyk wizard'
         sh 'snyk monitor'
