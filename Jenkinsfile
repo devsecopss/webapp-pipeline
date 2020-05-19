@@ -23,6 +23,7 @@ pipeline {
         sh 'docker run --rm dxa4481/trufflehog --regex --entropy=False --json https://github.com/devsecopss/webapp-pipeline.git > trufflehog_res.json || true'
         sh 'cat trufflehog_res.json' 
        }
+     
      //double Scan using git leaks
      steps {
        sh 'docker run --rm /zricethezavgitleaks -r=https://github.com/devsecopss/webapp-pipeline  --pretty --verbose > res.json' //by default ouput json
@@ -50,6 +51,7 @@ pipeline {
       sh 'mvn clean package'
        }
     }
+    
     // Static Code Analysis 
     stage ('SAST') {
         steps {
@@ -59,29 +61,31 @@ pipeline {
           }
         }
       }
+    
      stage("Quality Gate"){
           timeout(time: 1, unit: 'HOURS') {
               def qg = waitForQualityGate()
               if (qg.status != 'OK') {
+                  slackSend channel: '#devsecopsdemo', message: 'Error with SAST'
                   error "Pipeline aborted due to quality gate failure: ${qg.status}"
+              } else {
+                slackSend channel: '#devsecopsdemo', message: 'Pipeline Successfully passed SAST Verification'
               }
           }
       }
+    
     // Artifact Repository uploader to Nexus Server
     stage("Artifact Upload"){
       echo "Add steps"  
     }
     
-    
-    
-    
+
 
       stage ('Checking Services Health'){
         steps {
             sh 'echo Add my Script Over Here!!'
           }
       }
-
 
     stage ('Deploy-To-Tomcat') {
             steps {
@@ -94,11 +98,14 @@ pipeline {
     stage ('DAST') {
       steps {
          sh ' docker run -t owasp/zap2docker-stable zap-baseline.py -t http://webserver/webapp-pipeline/ || true'
+         //sh ' openvas cli '
       }
     }
     
     
     stage("Upload reports To Defect Dojo"){
+      echo "Uploading all steps reports to our vulnerability management tool Defect Dojo"
+      
     }
     
   }
