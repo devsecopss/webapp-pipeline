@@ -60,6 +60,7 @@ pipeline {
       }
     
      stage("Quality Gate"){
+       steps {
           timeout(time: 1, unit: 'HOURS') {
               def qg = waitForQualityGate()
               if (qg.status != 'OK') {
@@ -69,11 +70,14 @@ pipeline {
                 slackSend channel: '#devsecopsdemo', message: 'Pipeline Successfully passed SAST Verification'
               }
           }
+        }
       }
     
     // Artifact Repository uploader to Nexus Server
     stage("Artifact Upload"){
-      echo "Add steps"  
+      steps {
+        echo "Add steps"
+      }
     }
     
 
@@ -101,8 +105,9 @@ pipeline {
     
     
     stage("Upload reports To Defect Dojo"){
-      echo "Uploading all steps reports to our vulnerability management tool Defect Dojo"
-      
+      steps {
+        echo "Uploading all steps reports to our vulnerability management tool Defect Dojo"
+      }    
     }
     
   }
